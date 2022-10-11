@@ -1,35 +1,33 @@
-import { HttpResponse, HttpRequest } from '../protocols/http'
-import { MissingParamError } from '../erros/missing-param=error'
-import { badRequest } from '../helpers/http-helper'
-import {Controller} from '../protocols/controller'
-import { EmailValidator } from '../protocols/emailValidator'
+
 import { InvalidParamError } from '../erros/invalid-param=error'
-import { ServerError} from '../erros/server-error'
+import { MissingParamError } from '../erros/missing-param=error'
+import { badRequest, serverError } from '../helpers/http-helper'
+
+import { HttpResponse, HttpRequest } from '../protocols/http'
+import { Controller } from '../protocols/controller'
+import { EmailValidator } from '../protocols/emailValidator'
 
 export class SignUpController implements Controller {
     private readonly emailValidator: EmailValidator
-    constructor(emailValidator: EmailValidator){
+    constructor(emailValidator: EmailValidator) {
         this.emailValidator = emailValidator
 
     }
     handle(httpRequest: HttpRequest): HttpResponse | undefined {
         try {
-        const requiredFields = ['name','email', 'password','passwordConfirmation']
-        for (const field of requiredFields){
-            if (!httpRequest.body[field]) {
-                return badRequest(new MissingParamError(field))
+            const requiredFields = ['name', 'email', 'password', 'passwordConfirmation']
+            for (const field of requiredFields) {
+                if (!httpRequest.body[field]) {
+                    return badRequest(new MissingParamError(field))
+                }
+            }
+            const isValid = this.emailValidator.isValid( httpRequest.body.email )
+            if (!isValid) {
+                return badRequest(new InvalidParamError('email'))
             }
         }
-       const isValid = this.emailValidator.isValid(httpRequest.body.email)
-       if(!isValid){
-        return badRequest (new InvalidParamError('email'))
-       }
-    }
-    catch(error){
-        return {
-            statusCode: 500,
-            body: new ServerError
+        catch ( error ) {
+            return serverError()
         }
-    }
     }
 }
